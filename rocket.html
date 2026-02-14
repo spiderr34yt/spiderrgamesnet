@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>UFO Avcısı - Game Over Ekranlı</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial', sans-serif; }
+        canvas { display: block; }
+        .ui { position: fixed; top: 10px; left: 10px; color: white; z-index: 100; pointer-events: none; }
+        .back-btn { position: fixed; top: 10px; right: 10px; padding: 10px 20px; background: #333; color: white; border: none; cursor: pointer; border-radius: 5px; z-index: 101; text-decoration: none; font-weight: bold; }
+        #game-over { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); padding: 40px; border: 2px solid red;
+            text-align: center; color: white; display: none; z-index: 200; border-radius: 20px;
+        }
+        button { padding: 10px 20px; font-size: 20px; cursor: pointer; background: red; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">🏠 ANA SAYFA</a>
+    
+    <div id="game-over">
+        <h1>💥 OYUN BİTTİ! 💥</h1>
+        <p id="final-score">Skor: 0</p>
+        <button onclick="restartGame()">YENİDEN DENE</button>
+    </div>
+
+    <div class="ui">
+        <h1 id="score-display">SKOR: 0</h1>
+        <p>Hareket: OK TUŞLARI | Ateş: SPACE (Basılı Tutabilirsin)</p>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.onresize = resize;
+        resize();
+
+        let score = 0;
+        let bullets = [];
+        let ufos = [];
+        let gameOver = false;
+        let frameCount = 0;
+        const player = { x: canvas.width / 2, y: canvas.height - 100, w: 60, h: 80, speed: 10 };
+
+        let keys = {};
+        window.onkeydown = (e) => keys[e.code] = true;
+        window.onkeyup = (e) => keys[e.code] = false;
+
+        function drawRocket(x, y) {
+            if (gameOver) return; // Yanınca roketi çizme
+            ctx.fillStyle = "#00d4ff";
+            ctx.beginPath();
+            ctx.moveTo(x + 30, y);
+            ctx.lineTo(x, y + 80);
+            ctx.lineTo(x + 60, y + 80);
+            ctx.fill();
+            ctx.fillStyle = "#ff4500";
+            ctx.fillRect(x - 5, y + 60, 10, 20);
+            ctx.fillRect(x + 55, y + 60, 10, 20);
+        }
+
+        function drawUFO(x, y) {
+            ctx.fillStyle = "#33ff33";
+            ctx.beginPath();
+            ctx.ellipse(x + 40, y + 40, 50, 20, 0, 0, Math.PI * 2); // UFO Boyutu Büyütüldü
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            ctx.beginPath();
+            ctx.arc(x + 40, y + 30, 20, 0, Math.PI, true);
+            ctx.fill();
+        }
+
+        function restartGame() {
+            score = 0;
+            bullets = [];
+            ufos = [];
+            gameOver = false;
+            player.x = canvas.width / 2;
+            document.getElementById("game-over").style.display = "none";
+            document.getElementById("score-display").innerText = "SKOR: 0";
+            gameLoop();
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            // Hareket
+            if (keys["ArrowLeft"] && player.x > 10) player.x -= player.speed;
+            if (keys["ArrowRight"] && player.x < canvas.width - 70) player.x += player.speed;
+            
+            // Seri Ateş (Her 10 karede bir mermi atar - basılı tutunca çalışır)
+            if (keys["Space"] && frameCount % 10 === 0) {
+                bullets.push({ x: player.x + 27, y: player.y, w: 6, h: 20 });
+            }
+
+            bullets.forEach((b, i) => {
+                b.y -= 12;
+                if (b.y < 0) bullets.splice(i, 1);
+            });
+
+            ufos.forEach((u, i) => {
+                u.y += 2.5; // Hız Yavaşlatıldı (Daha dengeli)
+                
+                // 1. Çarpışma: Mermi UFO'yu vurdu mu?
+                bullets.forEach((b, bi) => {
+                    if (b.x < u.x + 80 && b.x + b.w > u.x && b.y < u.y + 40 && b.y + b.h > u.y) {
+                        ufos.splice(i, 1);
+                        bullets.splice(bi, 1);
+                        score += 10;
+                        document.getElementById("score-display").innerText = "SKOR: " + score;
+                    }
+                });
+
+                // 2. Çarpışma: UFO Rokete çarptı mı?
+                if (u.x < player.x + player.w && u.x + 80 > player.x && u.y < player.y + player.h && u.y + 40 > player.y) {
+                    endGame();
+                }
+
+                if (u.y > canvas.height) ufos.splice(i, 1);
+            });
+
+            // UFO Üretim Sıklığı
+            if (frameCount % 60 === 0) {
+                ufos.push({ x: Math.random() * (canvas.width - 100), y: -100 });
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            document.getElementById("final-score").innerText = "Skor: " + score;
+            document.getElementById("game-over").style.display = "block";
+        }
+
+        function draw() {
+            ctx.fillStyle = "#050a14";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Yıldızlar
+            ctx.fillStyle = "white";
+            for(let i=0; i<15; i++) {
+                ctx.fillRect((i*157)%canvas.width, (i*250+frameCount)%canvas.height, 2, 2);
+            }
+
+            bullets.forEach(b => {
+                ctx.fillStyle = "yellow";
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+            });
+
+            drawRocket(player.x, player.y);
+            ufos.forEach(u => drawUFO(u.x, u.y));
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+            frameCount++;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

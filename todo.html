@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Haftalık Planlayıcı</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .table { display: grid; grid-template-columns: 200px repeat(7, 1fr); gap: 5px; }
+        .cell { background: #333; padding: 15px; text-align: center; border: 1px solid #444; }
+        .header { background: #444; font-weight: bold; }
+        .status { cursor: pointer; font-size: 20px; }
+        .st-0 { background: #333; }
+        .st-1 { background: #2ecc71; } /* Yeşil */
+        .st-2 { background: #e74c3c; } /* Kırmızı */
+    </style>
+</head>
+<body>
+    <button onclick="addTask()">➕ Yeni Görev Ekle</button>
+    <br><br>
+    <div class="table" id="grid">
+        <div class="cell header">GÖREVLER</div>
+        <div class="cell header">Pzt</div><div class="cell header">Sal</div><div class="cell header">Çar</div>
+        <div class="cell header">Per</div><div class="cell header">Cum</div><div class="cell header">Cmt</div><div class="cell header">Paz</div>
+    </div>
+
+    <script>
+        function addTask() {
+            let task = prompt("Görev İsmi:");
+            if(!task) return;
+            let grid = document.getElementById('grid');
+            let rowHtml = `<div class="cell">${task}</div>`;
+            for(let i=0; i<7; i++) {
+                rowHtml += `<div class="cell status st-0" onclick="change(this)">-</div>`;
+            }
+            grid.innerHTML += rowHtml;
+        }
+
+        function change(el) {
+            if(el.innerText == "-") { el.innerText = "✓"; el.className = "cell status st-1"; }
+            else if(el.innerText == "✓") { el.innerText = "X"; el.className = "cell status st-2"; }
+            else { el.innerText = "-"; el.className = "cell status st-0"; }
+        }
+    </script>
+</body>
+</html>

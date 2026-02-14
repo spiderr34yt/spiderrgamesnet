@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cookie Clicker Pro</title>
+    <style>
+        body { background: #2c1b18; color: white; font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
+        .main { flex: 1; text-align: center; padding-top: 50px; }
+        #cookie { width: 250px; cursor: pointer; transition: 0.05s; }
+        #cookie:active { transform: scale(0.95); }
+        .shop { width: 350px; background: rgba(0,0,0,0.5); padding: 20px; overflow-y: auto; border-left: 2px solid orange; }
+        .upgrade { background: #4e342e; margin: 10px 0; padding: 15px; border-radius: 8px; cursor: pointer; }
+        .upgrade:hover { background: #6d4c41; }
+        .upgrade.locked { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <button onclick="location.href='index.html'">🏠 Geri Dön</button>
+        <h1 id="count">Kurabiye: 0</h1>
+        <p id="cps">Saniyede: 0</p>
+        <img id="cookie" src="https://img.icons8.com/plasticine/400/cookie.png" onclick="clickCookie()">
+    </div>
+    <div class="shop" id="shop"></div>
+
+    <script>
+        let cookies = parseFloat(localStorage.getItem('cookies')) || 0;
+        let clickPower = parseFloat(localStorage.getItem('clickPower')) || 1;
+        let autoCPS = parseFloat(localStorage.getItem('autoCPS')) || 0;
+
+        const upgrades = [
+            { name: "Süper Tık", cost: 50, power: 2, type: 'click' },
+            { name: "Fırıncı Anne", cost: 100, power: 1, type: 'auto' },
+            { name: "Kurabiye Fabrikası", cost: 500, power: 10, type: 'auto' },
+            { name: "Uzay Fırını", cost: 2000, power: 50, type: 'auto' }
+        ];
+
+        function clickCookie() {
+            cookies += clickPower;
+            update();
+        }
+
+        function update() {
+            document.getElementById('count').innerText = "Kurabiye: " + Math.floor(cookies);
+            document.getElementById('cps').innerText = "Saniyede: " + autoCPS;
+            localStorage.setItem('cookies', cookies);
+            localStorage.setItem('clickPower', clickPower);
+            localStorage.setItem('autoCPS', autoCPS);
+            renderShop();
+        }
+
+        function renderShop() {
+            let html = "<h2>Dükkan</h2>";
+            upgrades.forEach((u, i) => {
+                html += `<div class="upgrade ${cookies < u.cost ? 'locked' : ''}" onclick="buy(${i})">
+                    ${u.name} - ${u.cost} 🍪<br><small>${u.type == 'click' ? '+'+u.power+' Tık' : '+'+u.power+'/sn'}</small>
+                </div>`;
+            });
+            document.getElementById('shop').innerHTML = html;
+        }
+
+        function buy(i) {
+            let u = upgrades[i];
+            if(cookies >= u.cost) {
+                cookies -= u.cost;
+                if(u.type == 'click') clickPower += u.power;
+                else autoCPS += u.power;
+                u.cost = Math.floor(u.cost * 1.5);
+                update();
+            }
+        }
+
+        setInterval(() => { cookies += autoCPS/10; update(); }, 100);
+        update();
+    </script>
+</body>
+</html>
